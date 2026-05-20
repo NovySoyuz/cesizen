@@ -1,4 +1,4 @@
-.PHONY: help up down restart build logs ps clean test db-shell api-shell
+.PHONY: help up up-full down restart build logs ps clean test db-shell dev-api dev-web
 
 # Couleurs
 GREEN  := \033[0;32m
@@ -10,10 +10,10 @@ help: ## Affiche cette aide
 
 # ─── Docker ──────────────────────────────────────────────────────
 
-up: ## Démarre tous les conteneurs (db + api)
-	docker compose up -d
+up: ## Démarre DB + API
+	docker compose up -d cesizen-db cesizen-api
 
-up-full: ## Démarre tous les conteneurs dont le front
+up-full: ## Démarre DB + API + Front
 	docker compose --profile front up -d
 
 down: ## Arrête et supprime les conteneurs
@@ -28,16 +28,19 @@ build: ## Reconstruit les images Docker
 logs: ## Affiche les logs en temps réel
 	docker compose logs -f
 
-logs-api: ## Affiche les logs de l'API uniquement
-	docker compose logs -f cesizen
+logs-api: ## Logs de l'API uniquement
+	docker compose logs -f cesizen-api
 
-logs-db: ## Affiche les logs de la BDD uniquement
+logs-web: ## Logs du Front uniquement
+	docker compose logs -f cesizen-web
+
+logs-db: ## Logs de la DB uniquement
 	docker compose logs -f cesizen-db
 
 ps: ## Affiche l'état des conteneurs
 	docker compose ps
 
-clean: ## Supprime les conteneurs, volumes et images
+clean: ## Supprime conteneurs, volumes et images
 	docker compose down -v --rmi local
 
 # ─── Base de données ─────────────────────────────────────────────
@@ -46,24 +49,28 @@ db-up: ## Démarre uniquement la base de données
 	docker compose up -d cesizen-db
 
 db-shell: ## Ouvre un shell MySQL
-	docker exec -it cesizen-db mysql -u cesizen -pcesizen_secret cesizen
+	docker exec -it cesizen-db mysql -u cesizen -pcesizen cesizen
 
 db-reset: ## Supprime et recrée le volume de la BDD (⚠️ perte de données)
 	docker compose down -v
 	docker compose up -d cesizen-db
 
-# ─── Maven ───────────────────────────────────────────────────────
+# ─── Maven (API) ─────────────────────────────────────────────────
 
 test: ## Lance les tests unitaires
-	./mvnw test
+	cd apps/api && ./mvnw test
 
 test-report: ## Lance les tests et ouvre le rapport
-	./mvnw test && start target/surefire-reports/index.html
+	cd apps/api && ./mvnw test
 
 build-jar: ## Compile le JAR sans les tests
-	./mvnw clean package -DskipTests
+	cd apps/api && ./mvnw clean package -DskipTests
 
 # ─── Dev local (sans Docker) ─────────────────────────────────────
 
-dev: db-up ## Lance l'API en local (nécessite Java 21)
-	./mvnw spring-boot:run
+dev-api: db-up ## Lance l'API en local (Java 21 requis)
+	cd apps/api && ./mvnw spring-boot:run
+
+dev-web: ## Lance le front en local (hot-reload sur http://localhost:5173)
+	cd apps/web && npm run dev
+

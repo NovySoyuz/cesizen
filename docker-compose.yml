@@ -24,11 +24,11 @@ services:
       - cesizen-network
 
   # ─── Backend Spring Boot ─────────────────────────────────────────
-  cesizen:
+  cesizen-api:
     build:
-      context: .
+      context: ./apps/api
       dockerfile: Dockerfile
-    container_name: cesizen
+    container_name: cesizen-api
     restart: unless-stopped
     depends_on:
       cesizen-db:
@@ -45,21 +45,21 @@ services:
     networks:
       - cesizen-network
 
-  # ─── Frontend React (à venir) ────────────────────────────────────
-  cesizen-front:
+  # ─── Frontend React ──────────────────────────────────────────────
+  cesizen-web:
     build:
-      context: ../cesizen-front
+      context: ./apps/web
       dockerfile: Dockerfile
-    container_name: cesizen-front
+    container_name: cesizen-web
     restart: unless-stopped
     depends_on:
-      - cesizen
+      - cesizen-api
     ports:
       - "3000:80"
     networks:
       - cesizen-network
     profiles:
-      - front  # Activé uniquement quand le front existe : docker compose --profile front up
+      - front  # Activé uniquement avec : docker compose --profile front up
 
 volumes:
   cesizen-db-data:

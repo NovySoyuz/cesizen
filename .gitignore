@@ -4,6 +4,8 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .env
+cahierdescharges.txt
+cesizen.txt
 
 ### STS ###
 .apt_generated
@@ -32,3 +34,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# ─── Monorepo ────────────────────────────────────────────────────
+# API
+apps/api/target/
+
+# Frontend
+apps/web/node_modules/
+apps/web/dist/
+
