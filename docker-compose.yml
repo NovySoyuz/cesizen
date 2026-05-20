@@ -1,0 +1,69 @@
+services:
+
+  # ─── Base de données MySQL ───────────────────────────────────────
+  cesizen-db:
+    image: mysql:8.4
+    container_name: cesizen-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-cesizen}
+      MYSQL_USER: ${DB_USER:-cesizen}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-cesizen}
+    ports:
+      - "3306:3306"
+    volumes:
+      - cesizen-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - cesizen-network
+
+  # ─── Backend Spring Boot ─────────────────────────────────────────
+  cesizen:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cesizen
+    restart: unless-stopped
+    depends_on:
+      cesizen-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: cesizen-db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-cesizen}
+      DB_USER: ${DB_USER:-cesizen}
+      DB_PASSWORD: ${DB_PASSWORD:-cesizen}
+      JWT_SECRET: ${JWT_SECRET:-cesizen-super-secret-key-change-in-production-min-256bits}
+    ports:
+      - "8080:8080"
+    networks:
+      - cesizen-network
+
+  # ─── Frontend React (à venir) ────────────────────────────────────
+  cesizen-front:
+    build:
+      context: ../cesizen-front
+      dockerfile: Dockerfile
+    container_name: cesizen-front
+    restart: unless-stopped
+    depends_on:
+      - cesizen
+    ports:
+      - "3000:80"
+    networks:
+      - cesizen-network
+    profiles:
+      - front  # Activé uniquement quand le front existe : docker compose --profile front up
+
+volumes:
+  cesizen-db-data:
+
+networks:
+  cesizen-network:
+    driver: bridge

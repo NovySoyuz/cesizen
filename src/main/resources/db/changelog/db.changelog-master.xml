@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <include file="db/changelog/migrations/V001__create_utilisateur.xml"/>
+    <include file="db/changelog/migrations/V002__create_questionnaire.xml"/>
+    <include file="db/changelog/migrations/V003__create_question.xml"/>
+    <include file="db/changelog/migrations/V004__create_option_reponse.xml"/>
+    <include file="db/changelog/migrations/V005__create_interpretation.xml"/>
+    <include file="db/changelog/migrations/V006__create_diagnostic.xml"/>
+    <include file="db/changelog/migrations/V007__create_choix_utilisateur.xml"/>
+
+</databaseChangeLog>
