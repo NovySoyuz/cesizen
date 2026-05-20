@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V006-1" author="cesizen">
+        <createTable tableName="diagnostic">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="date_realisation" type="DATETIME" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="score_total" type="INT"/>
+            <column name="id_questionnaire" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="id_utilisateur" type="BIGINT"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="diagnostic"
+                baseColumnNames="id_questionnaire"
+                constraintName="fk_diagnostic_questionnaire"
+                referencedTableName="questionnaire"
+                referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+                baseTableName="diagnostic"
+                baseColumnNames="id_utilisateur"
+                constraintName="fk_diagnostic_utilisateur"
+                referencedTableName="utilisateur"
+                referencedColumnNames="id"
+                onDelete="SET NULL"/>
+    </changeSet>
+
+</databaseChangeLog>

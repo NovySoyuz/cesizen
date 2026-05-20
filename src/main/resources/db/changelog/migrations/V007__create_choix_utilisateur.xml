@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V007-1" author="cesizen">
+        <createTable tableName="choix_utilisateur">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="id_diagnostic" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="id_option" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repondu_le" type="DATETIME" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="choix_utilisateur"
+                baseColumnNames="id_diagnostic"
+                constraintName="fk_choix_diagnostic"
+                referencedTableName="diagnostic"
+                referencedColumnNames="id"
+                onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+                baseTableName="choix_utilisateur"
+                baseColumnNames="id_option"
+                constraintName="fk_choix_option"
+                referencedTableName="option_reponse"
+                referencedColumnNames="id"/>
+    </changeSet>
+
+</databaseChangeLog>
