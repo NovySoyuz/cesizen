@@ -6,6 +6,7 @@ target/
 .env
 cahierdescharges.txt
 cesizen.txt
+/docs
 
 ### STS ###
 .apt_generated

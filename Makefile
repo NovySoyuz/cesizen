@@ -15,9 +15,12 @@ up: ## Démarre DB + API
 
 up-full: ## Démarre DB + API + Front
 	docker compose --profile front up -d
+	@echo Front : http://localhost:3000
+	@echo Back  : http://localhost:8080
 
 down: ## Arrête et supprime les conteneurs
 	docker compose down
+	docker compose --profile front down
 
 restart: ## Redémarre tous les conteneurs
 	docker compose restart
