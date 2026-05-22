@@ -1,4 +1,4 @@
-.PHONY: help up up-full down restart build logs ps clean test db-shell dev-api dev-web
+.PHONY: help up up-full down restart build logs ps clean test db-shell dev-api dev-web rebuild-api rebuild-front rebuild-all
 
 # Couleurs
 GREEN  := \033[0;32m
@@ -61,18 +61,34 @@ db-reset: ## Supprime et recrée le volume de la BDD (⚠️ perte de données)
 # ─── Maven (API) ─────────────────────────────────────────────────
 
 test: ## Lance les tests unitaires
-	cd apps/api && ./mvnw test
+	cd apps/api && mvnw.cmd test
 
 test-report: ## Lance les tests et ouvre le rapport
-	cd apps/api && ./mvnw test
+	cd apps/api && mvnw.cmd test
 
 build-jar: ## Compile le JAR sans les tests
-	cd apps/api && ./mvnw clean package -DskipTests
+	cd apps/api && mvnw.cmd clean package -DskipTests
 
-rebuild-api: ## ⚡ Build rapide : JAR local + image Docker légère (dev)
-	docker compose down
+rebuild-api: ## ⚡ Rebuild API uniquement (JAR + Docker)
+	cd apps/api && mvnw.cmd clean package -DskipTests
 	docker compose build --no-cache cesizen-api
-	docker compose up -d cesizen-db cesizen-api
+	docker compose up -d --force-recreate cesizen-api
+	@echo Back : http://localhost:8080
+
+# ─── front ───────────────────────────────────────────────────────
+
+rebuild-front: ## ⚡ Rebuild Front uniquement (npm + Docker)
+	docker compose build --no-cache cesizen-web
+	docker compose --profile front up -d --force-recreate cesizen-web
+	@echo Front : http://localhost:3000
+
+rebuild-all: ## ⚡ Rebuild complet API + Front
+	cd apps/api && mvnw.cmd clean package -DskipTests
+	docker compose --profile front down
+	docker compose build --no-cache
+	docker compose --profile front up -d
+	@echo Front : http://localhost:3000
+	@echo Back  : http://localhost:8080
 # ─── Dev local (sans Docker) ─────────────────────────────────────
 
 dev-api: db-up ## Lance l'API en local (Java 21 requis)
