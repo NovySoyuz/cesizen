@@ -62,8 +62,10 @@ public class GlobalExceptionHandler {
     // ─── Ressource introuvable (RuntimeException) ─────────────────
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
+        log.error("RuntimeException [{}]: {}", ex.getClass().getName(), ex.getMessage(), ex);
+        String message = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                new ErrorResponse(400, ex.getMessage(), LocalDateTime.now())
+                new ErrorResponse(400, message, LocalDateTime.now())
         );
     }
 

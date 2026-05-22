@@ -45,6 +45,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         // Routes publiques Pages (GET uniquement)
                         .requestMatchers(HttpMethod.GET, "/api/pages/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/questionnaires/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/diagnostics").permitAll()
                         // Routes admin uniquement
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/pages/**").hasRole("ADMIN")
