@@ -12,5 +12,6 @@
     <include file="db/changelog/migrations/V005__create_interpretation.xml"/>
     <include file="db/changelog/migrations/V006__create_diagnostic.xml"/>
     <include file="db/changelog/migrations/V007__create_choix_utilisateur.xml"/>
+    <include file="db/changelog/migrations/V008__create_page.xml"/>
 
 </databaseChangeLog>

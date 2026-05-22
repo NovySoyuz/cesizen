@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V008-1" author="cesizen">
+        <createTable tableName="page">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="titre" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="slug" type="VARCHAR(150)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="contenu" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="est_actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="DATETIME" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="DATETIME" defaultValueComputed="CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="V008-2" author="cesizen">
+        <insert tableName="page">
+            <column name="titre" value="Accueil"/>
+            <column name="slug" value="accueil"/>
+            <column name="contenu" value="Bienvenue sur CESIZen, votre espace de gestion du stress."/>
+            <column name="est_actif" valueBoolean="true"/>
+        </insert>
+        <insert tableName="page">
+            <column name="titre" value="À propos"/>
+            <column name="slug" value="a-propos"/>
+            <column name="contenu" value="CESIZen est une plateforme dédiée à la santé mentale et à la gestion du stress."/>
+            <column name="est_actif" valueBoolean="true"/>
+        </insert>
+        <insert tableName="page">
+            <column name="titre" value="Mentions légales"/>
+            <column name="slug" value="mentions-legales"/>
+            <column name="contenu" value="Mentions légales de la plateforme CESIZen."/>
+            <column name="est_actif" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

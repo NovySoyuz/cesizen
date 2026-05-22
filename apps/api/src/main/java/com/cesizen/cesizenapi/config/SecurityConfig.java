@@ -41,10 +41,13 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS) // pas de session HTTP
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Routes publiques
+                        // Routes publiques Auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        // Routes publiques Pages (GET uniquement)
+                        .requestMatchers(HttpMethod.GET, "/api/pages/**").permitAll()
                         // Routes admin uniquement
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/pages/**").hasRole("ADMIN")
                         // Toute autre route nécessite d'être connecté
                         .anyRequest().authenticated()
                 )

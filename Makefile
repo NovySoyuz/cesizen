@@ -69,6 +69,10 @@ test-report: ## Lance les tests et ouvre le rapport
 build-jar: ## Compile le JAR sans les tests
 	cd apps/api && ./mvnw clean package -DskipTests
 
+rebuild-api: ## ⚡ Build rapide : JAR local + image Docker légère (dev)
+	docker compose down
+	docker compose build --no-cache cesizen-api
+	docker compose up -d cesizen-db cesizen-api
 # ─── Dev local (sans Docker) ─────────────────────────────────────
 
 dev-api: db-up ## Lance l'API en local (Java 21 requis)
@@ -76,4 +80,3 @@ dev-api: db-up ## Lance l'API en local (Java 21 requis)
 
 dev-web: ## Lance le front en local (hot-reload sur http://localhost:5173)
 	cd apps/web && npm run dev
-
