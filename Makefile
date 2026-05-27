@@ -84,9 +84,9 @@ rebuild-front: ## ⚡ Rebuild Front uniquement (npm + Docker)
 
 rebuild-all: ## ⚡ Rebuild complet API + Front
 	cd apps/api && mvnw.cmd clean package -DskipTests
-	docker compose --profile front down
-	docker compose build --no-cache
-	docker compose --profile front up -d
+	docker compose build --no-cache cesizen-web
+	docker compose --profile front up -d --force-recreate cesizen-web
+	docker compose up -d --force-recreate cesizen-web
 	@echo Front : http://localhost:3000
 	@echo Back  : http://localhost:8080
 # ─── Dev local (sans Docker) ─────────────────────────────────────

@@ -1,5 +1,16 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { AuthResponse, UserDto } from '../types/auth';
+import { registerLogoutHandler } from '../api/axiosInstance';
+
+// ── Décode le JWT et vérifie s'il est expiré ─────────────────────
+function isTokenExpired(token: string): boolean {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp * 1000 < Date.now();
+    } catch {
+        return true; // token malformé → considéré expiré
+    }
+}
 
 // Définit ce que le contexte expose à toute l'application
 // memoire globale de l'appli n'importe quel composant peut appeler useAuth() pour accéder à ces données et fonctions
@@ -10,6 +21,7 @@ interface AuthContextType {
     logout: () => void;
     isAuthenticated: boolean;
     isAdmin: boolean;
+    isLoading: boolean;
 }
 
 // Crée le contexte (valeur par défaut null)
@@ -19,16 +31,52 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserDto | null>(null);
     const [token, setToken] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true); // ← true au démarrage
 
-    // Au démarrage, récupère les données depuis localStorage
+    // ── Fonction logout partagée (utilisée aussi par l'intercepteur) ─
+    const logout = useCallback(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToken(null);
+        setUser(null);
+    }, []);
+
+    // ── Au démarrage : vérifier le token stocké et son expiration ───
     useEffect(() => {
         const savedToken = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
+
         if (savedToken && savedUser) {
-            setToken(savedToken);
-            setUser(JSON.parse(savedUser));
+            if (isTokenExpired(savedToken)) {
+                // Token expiré → nettoyage immédiat sans redirection
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            } else {
+                setToken(savedToken);
+                setUser(JSON.parse(savedUser));
+            }
         }
+        setIsLoading(false); // ← terminé, on peut vérifier l'auth
     }, []);
+
+    // ── Enregistrer logout dans l'intercepteur Axios ─────────────────
+    useEffect(() => {
+        registerLogoutHandler(logout);
+    }, [logout]);
+
+    // ── Vérification périodique de l'expiration du token (toutes les minutes) ─
+    useEffect(() => {
+        if (!token) return;
+
+        const interval = setInterval(() => {
+            if (isTokenExpired(token)) {
+                logout();
+                window.location.href = '/connexion';
+            }
+        }, 60_000); // vérification toutes les 60 secondes
+
+        return () => clearInterval(interval);
+    }, [token, logout]);
 
     // Appelée après login/register réussi
     const login = (data: AuthResponse) => {
@@ -46,14 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userDto);
     };
 
-    // Appelée lors de la déconnexion
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setToken(null);
-        setUser(null);
-    };
-
     return (
         <AuthContext.Provider value={{
             user,
@@ -62,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             logout,
             isAuthenticated: !!token,
             isAdmin: user?.role === 'ADMIN',
+            isLoading,
         }}>
             {children}
         </AuthContext.Provider>

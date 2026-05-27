@@ -1,97 +1,160 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/axiosInstance';
+import { userService } from '../api/userService';
+import { Input } from "@codegouvfr/react-dsfr/Input";
+import { Button } from "@codegouvfr/react-dsfr/Button";
+import { Alert } from "@codegouvfr/react-dsfr/Alert";
+import { Badge } from "@codegouvfr/react-dsfr/Badge";
+import { Breadcrumb } from "@codegouvfr/react-dsfr/Breadcrumb";
 
 export default function ProfilePage() {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
+    const { user, logout, login, token } = useAuth();
 
     const [form, setForm] = useState({
         nom: user?.nom ?? '',
         prenom: user?.prenom ?? '',
+        email: user?.email ?? '',
         motDePasse: '',
     });
-
     const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+    const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm({ ...form, [field]: e.target.value });
     };
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-
+        setMessage('');
+        setError('');
         try {
-            await api.put('/api/users/me', form);
+            const updated = await userService.updateMe(form);
+            // Mettre à jour le contexte auth avec les nouvelles données
+            login({ ...updated, token: token!, type: 'Bearer' });
             setMessage('Profil mis à jour avec succès !');
+            setForm({ ...form, motDePasse: '' });
         } catch {
-            setMessage('Erreur lors de la mise à jour.');
+            setError('Erreur lors de la mise à jour du profil.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleLogout = async () => {
-        await api.post('/api/auth/logout');
+    const handleLogout = () => {
         logout();
-        navigate('/login');
+        window.location.href = '/';
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.card}>
-                <h1 style={styles.title}>Mon profil</h1>
+        <main role="main" id="content">
+            <div className="fr-container fr-my-4w">
+                <Breadcrumb
+                    currentPageLabel="Mon profil"
+                    homeLinkProps={{ href: "/" }}
+                    segments={[]}
+                />
 
-                <div style={styles.info}>
-                    <p><strong>Email :</strong> {user?.email}</p>
-                    <p><strong>Rôle :</strong> {user?.role}</p>
+                <h1 className="fr-h2">Mon profil</h1>
+
+                <div className="fr-grid-row fr-grid-row--gutters">
+                    {/* Informations du compte */}
+                    <div className="fr-col-12 fr-col-md-4">
+                        <div className="fr-card fr-p-3w">
+                            <h2 className="fr-h5">Informations du compte</h2>
+                            <p className="fr-text--sm fr-mb-1w">
+                                <strong>Email :</strong> {user?.email}
+                            </p>
+                            <p className="fr-text--sm fr-mb-2w">
+                                <strong>Rôle :</strong>{' '}
+                                <Badge
+                                    severity={user?.role === 'ADMIN' ? 'warning' : 'info'}
+                                    small
+                                >
+                                    {user?.role === 'ADMIN' ? 'Administrateur' : 'Utilisateur'}
+                                </Badge>
+                            </p>
+                            <p className="fr-text--sm fr-mb-3w">
+                                <strong>Statut :</strong>{' '}
+                                <Badge severity="success" small>Actif</Badge>
+                            </p>
+                            <Button
+                                priority="tertiary no outline"
+                                iconId="fr-icon-logout-box-r-line"
+                                onClick={handleLogout}
+                                className="fr-btn--sm"
+                            >
+                                Se déconnecter
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Formulaire de modification */}
+                    <div className="fr-col-12 fr-col-md-8">
+                        <div className="fr-card fr-p-3w">
+                            <h2 className="fr-h5">Modifier mes informations</h2>
+
+                            {message && (
+                                <Alert severity="success" title="Succès" description={message} className="fr-mb-3w" small />
+                            )}
+                            {error && (
+                                <Alert severity="error" title="Erreur" description={error} className="fr-mb-3w" small />
+                            )}
+
+                            <form onSubmit={handleUpdate}>
+                                <div className="fr-grid-row fr-grid-row--gutters">
+                                    <div className="fr-col-12 fr-col-md-6">
+                                        <Input
+                                            label="Nom"
+                                            nativeInputProps={{
+                                                name: 'nom', value: form.nom, required: true,
+                                                autoComplete: 'family-name',
+                                                onChange: handleChange('nom'),
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="fr-col-12 fr-col-md-6">
+                                        <Input
+                                            label="Prénom"
+                                            nativeInputProps={{
+                                                name: 'prenom', value: form.prenom, required: true,
+                                                autoComplete: 'given-name',
+                                                onChange: handleChange('prenom'),
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                <Input
+                                    label="Adresse e-mail"
+                                    className="fr-mt-2w"
+                                    nativeInputProps={{
+                                        type: 'email', name: 'email', value: form.email, required: true,
+                                        autoComplete: 'email',
+                                        onChange: handleChange('email'),
+                                    }}
+                                />
+                                <Input
+                                    label="Nouveau mot de passe"
+                                    hintText="Laisser vide pour ne pas modifier. Au moins 8 caractères."
+                                    className="fr-mt-2w"
+                                    nativeInputProps={{
+                                        type: 'password', name: 'motDePasse', value: form.motDePasse,
+                                        autoComplete: 'new-password', minLength: 8,
+                                        onChange: handleChange('motDePasse'),
+                                    }}
+                                />
+                                <div className="fr-mt-3w">
+                                    <Button type="submit" disabled={loading} iconId="fr-icon-save-line">
+                                        {loading ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-
-                {message && <p style={styles.success}>{message}</p>}
-
-                <form onSubmit={handleUpdate} style={styles.form}>
-                    <div style={styles.row}>
-                        <div style={styles.field}>
-                            <label>Nom</label>
-                            <input name="nom" value={form.nom} onChange={handleChange} style={styles.input} />
-                        </div>
-                        <div style={styles.field}>
-                            <label>Prénom</label>
-                            <input name="prenom" value={form.prenom} onChange={handleChange} style={styles.input} />
-                        </div>
-                    </div>
-
-                    <div style={styles.field}>
-                        <label>Nouveau mot de passe <span style={{ color: '#999' }}>(optionnel)</span></label>
-                        <input name="motDePasse" type="password" value={form.motDePasse} onChange={handleChange} style={styles.input} placeholder="Laisser vide pour ne pas changer" />
-                    </div>
-
-                    <button type="submit" disabled={loading} style={styles.button}>
-                        {loading ? 'Mise à jour...' : 'Mettre à jour'}
-                    </button>
-                </form>
-
-                <button onClick={handleLogout} style={styles.logoutButton}>
-                    Se déconnecter
-                </button>
             </div>
-        </div>
+        </main>
     );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-    container: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' },
-    card: { background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', width: '100%', maxWidth: '480px' },
-    title: { marginBottom: '1rem', textAlign: 'center', color: '#333' },
-    info: { background: '#f9f9f9', padding: '1rem', borderRadius: '4px', marginBottom: '1.5rem' },
-    form: { display: 'flex', flexDirection: 'column', gap: '1rem' },
-    row: { display: 'flex', gap: '1rem' },
-    field: { display: 'flex', flexDirection: 'column', flex: 1, gap: '0.25rem' },
-    input: { padding: '0.6rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1rem' },
-    button: { padding: '0.75rem', background: '#4a90e2', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1rem', cursor: 'pointer' },
-    logoutButton: { width: '100%', marginTop: '1rem', padding: '0.75rem', background: '#e74c3c', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1rem', cursor: 'pointer' },
-    success: { color: 'green', background: '#f0fff0', padding: '0.5rem', borderRadius: '4px' },
-};

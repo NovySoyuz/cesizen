@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <!-- ══════════════════════════════════════════════════════════════
+         Nettoyage des données de test et insertion du questionnaire
+         PSS-10 (Perceived Stress Scale - 10 questions)
+         Score total : 0 à 40 points
+         ══════════════════════════════════════════════════════════════ -->
+    <changeSet id="V009-1" author="cesizen">
+        <sql>
+            SET FOREIGN_KEY_CHECKS = 0;
+            TRUNCATE TABLE choix_utilisateur;
+            TRUNCATE TABLE diagnostic;
+            TRUNCATE TABLE option_reponse;
+            TRUNCATE TABLE interpretation;
+            TRUNCATE TABLE question;
+            TRUNCATE TABLE questionnaire;
+            SET FOREIGN_KEY_CHECKS = 1;
+        </sql>
+    </changeSet>
+
+    <!-- ── Questionnaire PSS-10 ───────────────────────────────────── -->
+    <changeSet id="V009-2" author="cesizen">
+        <sql>
+            INSERT INTO questionnaire (id, titre, description, est_actif, created_at, updated_at) VALUES
+            (1,
+             'Échelle de Stress Perçu (PSS-10)',
+             'Ce questionnaire mesure votre niveau de stress perçu au cours du dernier mois. Pour chaque question, indiquez à quelle fréquence vous avez ressenti la situation décrite. Il n''y a pas de bonnes ou mauvaises réponses. Le résultat vous donnera une indication sur votre niveau de stress actuel.',
+             true,
+             NOW(), NOW());
+        </sql>
+    </changeSet>
+
+    <!-- ── Questions (10 au total) ───────────────────────────────── -->
+    <!-- Questions directes (D) : Jamais=0 → Très souvent=4           -->
+    <!-- Questions inversées (R) : Jamais=4 → Très souvent=0          -->
+    <changeSet id="V009-3" author="cesizen">
+        <sql>
+            INSERT INTO question (id, libelle, ordre, est_actif, id_questionnaire) VALUES
+            (1,  'Au cours du DERNIER MOIS, à quelle fréquence avez-vous été perturbé(e) par un événement inattendu ?',                                            1,  true, 1),
+            (2,  'Au cours du DERNIER MOIS, à quelle fréquence avez-vous eu le sentiment de ne pas pouvoir contrôler les choses importantes de votre vie ?',       2,  true, 1),
+            (3,  'Au cours du DERNIER MOIS, à quelle fréquence vous êtes-vous senti(e) stressé(e) ou nerveux(se) ?',                                              3,  true, 1),
+            (4,  'Au cours du DERNIER MOIS, à quelle fréquence avez-vous réussi à faire face aux petites difficultés du quotidien ?',                              4,  true, 1),
+            (5,  'Au cours du DERNIER MOIS, à quelle fréquence avez-vous eu le sentiment de gérer efficacement les changements importants de votre vie ?',         5,  true, 1),
+            (6,  'Au cours du DERNIER MOIS, à quelle fréquence avez-vous eu confiance en votre capacité à résoudre vos problèmes personnels ?',                    6,  true, 1),
+            (7,  'Au cours du DERNIER MOIS, à quelle fréquence avez-vous eu le sentiment que les choses allaient dans le sens que vous souhaitiez ?',              7,  true, 1),
+            (8,  'Au cours du DERNIER MOIS, à quelle fréquence avez-vous eu du mal à accomplir toutes les choses que vous deviez faire ?',                         8,  true, 1),
+            (9,  'Au cours du DERNIER MOIS, à quelle fréquence avez-vous réussi à contrôler votre stress ou votre énervement ?',                                   9,  true, 1),
+            (10, 'Au cours du DERNIER MOIS, à quelle fréquence avez-vous eu le sentiment d''être dépassé(e) par les événements ?',                                 10, true, 1);
+        </sql>
+    </changeSet>
+
+    <!-- ── Options pour questions DIRECTES (Q1, Q2, Q3, Q8, Q10) ─── -->
+    <!-- Jamais=0, Presque jamais=1, Parfois=2, Assez souvent=3, Très souvent=4 -->
+    <changeSet id="V009-4" author="cesizen">
+        <sql>
+            INSERT INTO option_reponse (id, libelle, points, id_question) VALUES
+            /* Q1 - Direct */
+            (1,  'Jamais',           0, 1),
+            (2,  'Presque jamais',   1, 1),
+            (3,  'Parfois',          2, 1),
+            (4,  'Assez souvent',    3, 1),
+            (5,  'Très souvent',     4, 1),
+            /* Q2 - Direct */
+            (6,  'Jamais',           0, 2),
+            (7,  'Presque jamais',   1, 2),
+            (8,  'Parfois',          2, 2),
+            (9,  'Assez souvent',    3, 2),
+            (10, 'Très souvent',     4, 2),
+            /* Q3 - Direct */
+            (11, 'Jamais',           0, 3),
+            (12, 'Presque jamais',   1, 3),
+            (13, 'Parfois',          2, 3),
+            (14, 'Assez souvent',    3, 3),
+            (15, 'Très souvent',     4, 3),
+            /* Q4 - INVERSÉE */
+            (16, 'Jamais',           4, 4),
+            (17, 'Presque jamais',   3, 4),
+            (18, 'Parfois',          2, 4),
+            (19, 'Assez souvent',    1, 4),
+            (20, 'Très souvent',     0, 4),
+            /* Q5 - INVERSÉE */
+            (21, 'Jamais',           4, 5),
+            (22, 'Presque jamais',   3, 5),
+            (23, 'Parfois',          2, 5),
+            (24, 'Assez souvent',    1, 5),
+            (25, 'Très souvent',     0, 5),
+            /* Q6 - INVERSÉE */
+            (26, 'Jamais',           4, 6),
+            (27, 'Presque jamais',   3, 6),
+            (28, 'Parfois',          2, 6),
+            (29, 'Assez souvent',    1, 6),
+            (30, 'Très souvent',     0, 6),
+            /* Q7 - INVERSÉE */
+            (31, 'Jamais',           4, 7),
+            (32, 'Presque jamais',   3, 7),
+            (33, 'Parfois',          2, 7),
+            (34, 'Assez souvent',    1, 7),
+            (35, 'Très souvent',     0, 7),
+            /* Q8 - Direct */
+            (36, 'Jamais',           0, 8),
+            (37, 'Presque jamais',   1, 8),
+            (38, 'Parfois',          2, 8),
+            (39, 'Assez souvent',    3, 8),
+            (40, 'Très souvent',     4, 8),
+            /* Q9 - INVERSÉE */
+            (41, 'Jamais',           4, 9),
+            (42, 'Presque jamais',   3, 9),
+            (43, 'Parfois',          2, 9),
+            (44, 'Assez souvent',    1, 9),
+            (45, 'Très souvent',     0, 9),
+            /* Q10 - Direct */
+            (46, 'Jamais',           0, 10),
+            (47, 'Presque jamais',   1, 10),
+            (48, 'Parfois',          2, 10),
+            (49, 'Assez souvent',    3, 10),
+            (50, 'Très souvent',     4, 10);
+        </sql>
+    </changeSet>
+
+    <!-- ── Interprétations (3 niveaux, score 0-40) ───────────────── -->
+    <changeSet id="V009-5" author="cesizen">
+        <sql>
+            INSERT INTO interpretation (id, score_min, score_max, niveau_stress, message_resultat, id_questionnaire) VALUES
+            (1, 0,  13,
+             'Stress faible',
+             'Votre niveau de stress perçu est faible. Vous semblez bien gérer les situations difficiles et maintenir un bon équilibre dans votre quotidien. Continuez à prendre soin de vous et à pratiquer vos activités de bien-être.',
+             1),
+            (2, 14, 26,
+             'Stress modéré',
+             'Votre niveau de stress perçu est modéré. Il est normal de ressentir du stress face aux défis du quotidien. Nous vous encourageons à explorer des techniques de gestion du stress (respiration, relaxation, activité physique) et à ne pas hésiter à chercher du soutien si nécessaire.',
+             1),
+            (3, 27, 40,
+             'Stress élevé',
+             'Votre niveau de stress perçu est élevé. Il est important de prendre soin de vous. Parlez-en à un professionnel de santé, pratiquez des activités de relaxation et accordez-vous du temps pour vous ressourcer. En cas de détresse importante, contactez le 3114 (numéro national de prévention du suicide, 24h/24).',
+             1);
+        </sql>
+    </changeSet>
+
+    <!-- ── Pages d'information santé mentale ─────────────────────── -->
+    <changeSet id="V009-6" author="cesizen">
+        <sql>
+            INSERT INTO page (titre, slug, contenu, est_actif, created_at, updated_at) VALUES
+            (
+                'Comprendre le stress',
+                'comprendre-le-stress',
+                '&lt;h2&gt;Qu''est-ce que le stress ?&lt;/h2&gt;
+&lt;p&gt;Le stress est une réponse naturelle de l''organisme face à des situations perçues comme menaçantes ou exigeantes. Il peut être &lt;strong&gt;aigu&lt;/strong&gt; (ponctuel) ou &lt;strong&gt;chronique&lt;/strong&gt; (persistant).&lt;/p&gt;
+&lt;h2&gt;Les symptômes du stress&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Physiques :&lt;/strong&gt; tensions musculaires, maux de tête, troubles du sommeil&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Émotionnels :&lt;/strong&gt; irritabilité, anxiété, sentiment de débordement&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Cognitifs :&lt;/strong&gt; difficultés de concentration, pensées négatives récurrentes&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Comportementaux :&lt;/strong&gt; repli sur soi, modifications des habitudes alimentaires&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Facteurs déclencheurs courants&lt;/h2&gt;
+&lt;p&gt;Les situations stressantes varient selon les personnes, mais on retrouve souvent : la charge de travail, les relations interpersonnelles, les changements de vie importants, les problèmes financiers ou de santé.&lt;/p&gt;
+&lt;h2&gt;Quand consulter ?&lt;/h2&gt;
+&lt;p&gt;Si le stress persiste plus de quelques semaines et affecte votre qualité de vie, consultez votre médecin généraliste ou un professionnel de santé mentale.&lt;/p&gt;',
+                true, NOW(), NOW()
+            ),
+            (
+                'Techniques de gestion du stress',
+                'techniques-gestion-stress',
+                '&lt;h2&gt;Des outils pour mieux gérer votre stress&lt;/h2&gt;
+&lt;p&gt;Il existe de nombreuses techniques efficaces pour réduire le stress au quotidien. Voici les plus reconnues par la recherche scientifique.&lt;/p&gt;
+&lt;h2&gt;La respiration profonde (cohérence cardiaque)&lt;/h2&gt;
+&lt;p&gt;Inspirez pendant 5 secondes, expirez pendant 5 secondes. Pratiquez cet exercice 5 minutes, 3 fois par jour. Cette technique régule le système nerveux autonome et réduit significativement le stress.&lt;/p&gt;
+&lt;h2&gt;La pleine conscience (mindfulness)&lt;/h2&gt;
+&lt;p&gt;La méditation de pleine conscience consiste à porter son attention sur le moment présent, sans jugement. Même 10 minutes par jour peuvent produire des effets bénéfiques mesurables.&lt;/p&gt;
+&lt;h2&gt;L''activité physique&lt;/h2&gt;
+&lt;p&gt;L''exercice régulier libère des endorphines et réduit les hormones du stress. 30 minutes de marche rapide par jour suffisent à améliorer significativement l''humeur.&lt;/p&gt;
+&lt;h2&gt;Le soutien social&lt;/h2&gt;
+&lt;p&gt;Parler de ses difficultés à des proches ou à un professionnel aide à prendre du recul et à se sentir moins seul face au stress.&lt;/p&gt;',
+                true, NOW(), NOW()
+            ),
+            (
+                'Santé mentale : briser les tabous',
+                'sante-mentale-briser-tabous',
+                '&lt;h2&gt;La santé mentale, c''est quoi ?&lt;/h2&gt;
+&lt;p&gt;Selon l''OMS, la santé mentale est &lt;em&gt;«un état de bien-être dans lequel une personne peut se réaliser, surmonter les tensions normales de la vie, accomplir un travail productif et contribuer à la vie de sa communauté»&lt;/em&gt;.&lt;/p&gt;
+&lt;h2&gt;Les chiffres en France&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;1 Français sur 5 souffre d''un trouble mental au cours de sa vie&lt;/li&gt;
+  &lt;li&gt;Les troubles anxieux et dépressifs sont les plus fréquents&lt;/li&gt;
+  &lt;li&gt;Seulement 50% des personnes concernées consultent un professionnel&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Pourquoi consulter ?&lt;/h2&gt;
+&lt;p&gt;Consulter un psychologue ou un psychiatre n''est pas réservé aux situations de crise. C''est un acte de prévention et de soin de soi. Il n''y a aucune honte à demander de l''aide.&lt;/p&gt;
+&lt;h2&gt;Ressources disponibles&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;3114&lt;/strong&gt; : Numéro national de prévention du suicide (24h/24, 7j/7)&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;MonPsy&lt;/strong&gt; : Séances de soutien psychologique remboursées&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Psycom&lt;/strong&gt; : psycom.org - informations fiables sur la santé mentale&lt;/li&gt;
+&lt;/ul&gt;',
+                true, NOW(), NOW()
+            );
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
+

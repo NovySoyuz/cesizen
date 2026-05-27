@@ -7,6 +7,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 // Logique metier pour modification d'un profil utilisateur
@@ -46,6 +49,14 @@ public class UserService {
         return toDto(utilisateur);
     }
 
+    // ─── Liste tous les utilisateurs (admin) ─────────────────────
+    public List<UserDTO> getAllUsers() {
+        return utilisateurRepository.findAll()
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
     // ─── Désactive un compte (admin uniquement) ───────────────────
     public void deleteUser(Long id) {
         Utilisateur utilisateur = utilisateurRepository.findById(id)
@@ -60,6 +71,15 @@ public class UserService {
         Utilisateur utilisateur = utilisateurRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
         utilisateurRepository.delete(utilisateur);
+    }
+
+    // ─── Réactive un compte désactivé (admin uniquement) ─────────
+    public UserDTO activateUser(Long id) {
+        Utilisateur utilisateur = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+        utilisateur.setEstActif(true);
+        utilisateurRepository.save(utilisateur);
+        return toDto(utilisateur);
     }
 
     // ─── Convertit une entité en DTO (sans mot de passe) ─────────

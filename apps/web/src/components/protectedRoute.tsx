@@ -4,19 +4,22 @@ import type { ReactNode } from 'react';
 
 interface Props {
     children: ReactNode;
-    adminOnly?: boolean;
 }
 
-// Composant gardien : redirige si non connecté ou pas admin
-export default function ProtectedRoute({ children, adminOnly = false }: Props) {
-    const { isAuthenticated, isAdmin } = useAuth();
+export default function ProtectedRoute({ children }: Props) {
+    const { isAuthenticated, isLoading } = useAuth();
 
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
+    // Pendant la lecture du localStorage, on ne redirige pas encore
+    if (isLoading) {
+        return (
+            <div className="fr-container fr-my-6w" style={{ textAlign: 'center' }}>
+                <p className="fr-text--lg">Chargement...</p>
+            </div>
+        );
     }
 
-    if (adminOnly && !isAdmin) {
-        return <Navigate to="/" replace />;
+    if (!isAuthenticated) {
+        return <Navigate to="/connexion" replace />;
     }
 
     return <>{children}</>;

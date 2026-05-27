@@ -125,7 +125,7 @@
 | Migrations DB | Liquibase |
 | Sécurité | Spring Security + JWT (jjwt 0.12.6) |
 | Base de données | MySQL 8.4 |
-| Frontend | React + Vite + TypeScript |
+| Frontend | React + Vite + TypeScript | tailwind | Le Design Système de l'État Français (DSFR)
 | Containerisation | Docker / Docker Compose |
 | Tests | JUnit 5 + Mockito + MockMvc + H2 (in-memory) |
 | Build | Maven (API) / npm (web) |

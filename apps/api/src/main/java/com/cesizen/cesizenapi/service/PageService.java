@@ -22,11 +22,44 @@ public class PageService {
                 .toList();
     }
 
+    // ─── Liste toutes les pages (admin) ──────────────────────────
+    public List<PageDTO> getAllPagesAdmin() {
+        return pageRepository.findAll()
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
     // ─── Récupère une page par son slug (public) ──────────────────
     public PageDTO getPageBySlug(String slug) {
         Page page = pageRepository.findBySlug(slug)
                 .filter(Page::isEstActif)
                 .orElseThrow(() -> new RuntimeException("Page introuvable : " + slug));
+        return toDto(page);
+    }
+
+    // ─── Crée une nouvelle page (admin) ───────────────────────────
+    public PageDTO createPage(PageDTO dto) {
+        // Génère le slug depuis le titre si absent
+        String slug = dto.getSlug() != null && !dto.getSlug().isBlank()
+                ? dto.getSlug()
+                : dto.getTitre().toLowerCase()
+                    .replaceAll("[àâä]", "a")
+                    .replaceAll("[éèêë]", "e")
+                    .replaceAll("[îï]", "i")
+                    .replaceAll("[ôö]", "o")
+                    .replaceAll("[ùûü]", "u")
+                    .replaceAll("[^a-z0-9]+", "-")
+                    .replaceAll("^-|-$", "");
+
+        Page page = Page.builder()
+                .titre(dto.getTitre())
+                .slug(slug)
+                .contenu(dto.getContenu())
+                .estActif(dto.isEstActif())
+                .build();
+
+        pageRepository.save(page);
         return toDto(page);
     }
 

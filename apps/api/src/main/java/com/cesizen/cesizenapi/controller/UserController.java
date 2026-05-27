@@ -9,6 +9,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -29,11 +31,23 @@ public class UserController {
         return ResponseEntity.ok(userService.updateMe(userDetails.getUsername(), dto));
     }
 
+    // ─── GET /api/users (admin) ────────────────────────────────────
+    @GetMapping
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+
     // ─── DELETE /api/users/{id}/disable (désactivation) ─────────
     @DeleteMapping("/{id}/disable")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ─── PUT /api/users/{id}/activate (réactivation) ─────────────
+    @PutMapping("/{id}/activate")
+    public ResponseEntity<UserDTO> activateUser(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.activateUser(id));
     }
 
     // ─── DELETE /api/users/{id} (suppression définitive) ─────────

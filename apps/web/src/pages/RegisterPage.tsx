@@ -1,48 +1,42 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/axiosInstance';
-import type { AuthResponse, RegisterRequest } from '../types/auth';
+import { authService } from '../api/authService';
+import { Input } from "@codegouvfr/react-dsfr/Input";
+import { Button } from "@codegouvfr/react-dsfr/Button";
+import { Alert } from "@codegouvfr/react-dsfr/Alert";
+import type { RegisterRequest } from '../types/auth';
 
 export default function RegisterPage() {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const [form, setForm] = useState<RegisterRequest>({
-        nom: '',
-        prenom: '',
-        email: '',
-        motDePasse: '',
-    });
-
+    const [form, setForm] = useState<RegisterRequest>({ nom: '', prenom: '', email: '', motDePasse: '' });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
 
-    // Met à jour le champ modifié dans le formulaire
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-        setErrors({ ...errors, [e.target.name]: '' });
+    const handleChange = (field: keyof RegisterRequest) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm({ ...form, [field]: e.target.value });
+        setErrors({ ...errors, [field]: '' });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setErrors({});
-
         try {
-            const response = await api.post<AuthResponse>('/api/auth/register', form);
-            login(response.data);       // Stocke le token + user dans le contexte
-            navigate('/profile');        // Redirige vers le profil
+            const data = await authService.register(form);
+            login(data);
+            navigate('/');
         } catch (err: unknown) {
-            // Gère les erreurs de validation (400)
-            if (err && typeof err === 'object' && 'response' in err) {
-                const axiosErr = err as { response?: { data?: Record<string, string> | { message?: string } } };
-                const data = axiosErr.response?.data;
-                if (data && typeof data === 'object' && 'message' in data) {
-                    setErrors({ general: data.message ?? 'Erreur inconnue' });
-                } else if (data) {
-                    setErrors(data as Record<string, string>);
-                }
+            const axiosErr = err as { response?: { data?: Record<string, string> | { message?: string } } };
+            const data = axiosErr?.response?.data;
+            if (data && 'message' in data) {
+                setErrors({ general: data.message ?? 'Erreur inconnue' });
+            } else if (data) {
+                setErrors(data as Record<string, string>);
+            } else {
+                setErrors({ general: 'Une erreur est survenue. Veuillez réessayer.' });
             }
         } finally {
             setLoading(false);
@@ -50,61 +44,91 @@ export default function RegisterPage() {
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.card}>
-                <h1 style={styles.title}>Créer un compte</h1>
+        <main role="main" id="content">
+            <div className="fr-container fr-my-6w">
+                <div className="fr-grid-row fr-grid-row--center">
+                    <div className="fr-col-12 fr-col-md-8 fr-col-lg-6">
+                        <div className="fr-card fr-card--shadow fr-p-4w">
+                            <h1 className="fr-h2 fr-mb-4w">Créer un compte</h1>
 
-                {errors.general && <p style={styles.error}>{errors.general}</p>}
+                            {errors.general && (
+                                <Alert
+                                    severity="error"
+                                    title="Erreur d'inscription"
+                                    description={errors.general}
+                                    className="fr-mb-3w"
+                                    small
+                                />
+                            )}
 
-                <form onSubmit={handleSubmit} style={styles.form}>
-                    <div style={styles.row}>
-                        <div style={styles.field}>
-                            <label>Nom</label>
-                            <input name="nom" value={form.nom} onChange={handleChange} style={styles.input} />
-                            {errors.nom && <span style={styles.fieldError}>{errors.nom}</span>}
+                            <form onSubmit={handleSubmit}>
+                                <div className="fr-grid-row fr-grid-row--gutters">
+                                    <div className="fr-col-12 fr-col-md-6">
+                                        <Input
+                                            label="Nom"
+                                            state={errors.nom ? 'error' : 'default'}
+                                            stateRelatedMessage={errors.nom}
+                                            nativeInputProps={{
+                                                name: 'nom', value: form.nom, required: true,
+                                                autoComplete: 'family-name',
+                                                onChange: handleChange('nom'),
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="fr-col-12 fr-col-md-6">
+                                        <Input
+                                            label="Prénom"
+                                            state={errors.prenom ? 'error' : 'default'}
+                                            stateRelatedMessage={errors.prenom}
+                                            nativeInputProps={{
+                                                name: 'prenom', value: form.prenom, required: true,
+                                                autoComplete: 'given-name',
+                                                onChange: handleChange('prenom'),
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                <Input
+                                    label="Adresse e-mail"
+                                    state={errors.email ? 'error' : 'default'}
+                                    stateRelatedMessage={errors.email}
+                                    className="fr-mt-2w"
+                                    nativeInputProps={{
+                                        type: 'email', name: 'email', value: form.email, required: true,
+                                        autoComplete: 'email',
+                                        onChange: handleChange('email'),
+                                    }}
+                                />
+                                <Input
+                                    label="Mot de passe"
+                                    hintText="Au moins 8 caractères"
+                                    state={errors.motDePasse ? 'error' : 'default'}
+                                    stateRelatedMessage={errors.motDePasse}
+                                    className="fr-mt-2w"
+                                    nativeInputProps={{
+                                        type: 'password', name: 'motDePasse', value: form.motDePasse, required: true,
+                                        autoComplete: 'new-password', minLength: 8,
+                                        onChange: handleChange('motDePasse'),
+                                    }}
+                                />
+                                <Button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="fr-mt-3w fr-mb-2w"
+                                    style={{ width: '100%', justifyContent: 'center' }}
+                                >
+                                    {loading ? 'Inscription en cours...' : "S'inscrire"}
+                                </Button>
+                            </form>
+
+                            <p className="fr-text--sm">
+                                Déjà un compte ?{' '}
+                                <Link to="/connexion" className="fr-link">Se connecter</Link>
+                            </p>
                         </div>
-                        <div style={styles.field}>
-                            <label>Prénom</label>
-                            <input name="prenom" value={form.prenom} onChange={handleChange} style={styles.input} />
-                            {errors.prenom && <span style={styles.fieldError}>{errors.prenom}</span>}
-                        </div>
                     </div>
-
-                    <div style={styles.field}>
-                        <label>Email</label>
-                        <input name="email" type="email" value={form.email} onChange={handleChange} style={styles.input} />
-                        {errors.email && <span style={styles.fieldError}>{errors.email}</span>}
-                    </div>
-
-                    <div style={styles.field}>
-                        <label>Mot de passe</label>
-                        <input name="motDePasse" type="password" value={form.motDePasse} onChange={handleChange} style={styles.input} />
-                        {errors.motDePasse && <span style={styles.fieldError}>{errors.motDePasse}</span>}
-                    </div>
-
-                    <button type="submit" disabled={loading} style={styles.button}>
-                        {loading ? 'Inscription...' : "S'inscrire"}
-                    </button>
-                </form>
-
-                <p style={styles.link}>
-                    Déjà un compte ? <Link to="/login">Se connecter</Link>
-                </p>
+                </div>
             </div>
-        </div>
+        </main>
     );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    container: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' },
-    card: { background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', width: '100%', maxWidth: '480px' },
-    title: { marginBottom: '1.5rem', textAlign: 'center', color: '#333' },
-    form: { display: 'flex', flexDirection: 'column', gap: '1rem' },
-    row: { display: 'flex', gap: '1rem' },
-    field: { display: 'flex', flexDirection: 'column', flex: 1, gap: '0.25rem' },
-    input: { padding: '0.6rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1rem' },
-    button: { padding: '0.75rem', background: '#4a90e2', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1rem', cursor: 'pointer' },
-    error: { color: 'red', background: '#fff0f0', padding: '0.5rem', borderRadius: '4px' },
-    fieldError: { color: 'red', fontSize: '0.8rem' },
-    link: { textAlign: 'center', marginTop: '1rem' },
-};

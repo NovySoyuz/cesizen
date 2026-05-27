@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/axiosInstance';
-import type { AuthResponse, LoginRequest } from '../types/auth';
+import { authService } from '../api/authService';
+import { Input } from "@codegouvfr/react-dsfr/Input";
+import { Button } from "@codegouvfr/react-dsfr/Button";
+import { Alert } from "@codegouvfr/react-dsfr/Alert";
+import type { LoginRequest } from '../types/auth';
 
 export default function LoginPage() {
     const { login } = useAuth();
@@ -12,65 +15,82 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-        setError('');
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-
+        setError('');
         try {
-            const response = await api.post<AuthResponse>('/api/auth/login', form);
-            login(response.data);
-            navigate('/profile');
+            const data = await authService.login(form);
+            login(data);
+            navigate('/');
         } catch {
-            setError('Email ou mot de passe incorrect');
+            setError('Email ou mot de passe incorrect.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.card}>
-                <h1 style={styles.title}>Connexion</h1>
+        <main role="main" id="content">
+            <div className="fr-container fr-container--fluid fr-my-6w">
+                <div className="fr-grid-row fr-grid-row--center">
+                    <div className="fr-col-12 fr-col-md-6 fr-col-lg-4">
+                        <div className="fr-card fr-card--shadow fr-p-4w">
+                            <h1 className="fr-h2 fr-mb-4w">Connexions</h1>
 
-                {error && <p style={styles.error}>{error}</p>}
+                            {error && (
+                                <Alert
+                                    severity="error"
+                                    title="Erreur de connexion"
+                                    description={error}
+                                    className="fr-mb-3w"
+                                    small
+                                />
+                            )}
 
-                <form onSubmit={handleSubmit} style={styles.form}>
-                    <div style={styles.field}>
-                        <label>Email</label>
-                        <input name="email" type="email" value={form.email} onChange={handleChange} style={styles.input} />
+                            <form onSubmit={handleSubmit}>
+                                <Input
+                                    label="Adresse e-mail"
+                                    nativeInputProps={{
+                                        type: 'email',
+                                        name: 'email',
+                                        value: form.email,
+                                        autoComplete: 'email',
+                                        required: true,
+                                        onChange: (e) => setForm({ ...form, email: e.target.value }),
+                                    }}
+                                    className="fr-mb-2w"
+                                />
+                                <Input
+                                    label="Mot de passe"
+                                    nativeInputProps={{
+                                        type: 'password',
+                                        name: 'motDePasse',
+                                        value: form.motDePasse,
+                                        autoComplete: 'current-password',
+                                        required: true,
+                                        onChange: (e) => setForm({ ...form, motDePasse: e.target.value }),
+                                    }}
+                                    className="fr-mb-3w"
+                                />
+                                <Button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="fr-mb-3w"
+                                    style={{ width: '100%', justifyContent: 'center' }}
+                                >
+                                    {loading ? 'Connexion en cours...' : 'Se connecter'}
+                                </Button>
+                            </form>
+
+                            <p className="fr-text--sm">
+                                Pas encore de comptes ?{' '}
+                                <Link to="/inscription" className="fr-link">S'inscrire</Link>
+                            </p>
+                        </div>
                     </div>
-
-                    <div style={styles.field}>
-                        <label>Mot de passe</label>
-                        <input name="motDePasse" type="password" value={form.motDePasse} onChange={handleChange} style={styles.input} />
-                    </div>
-
-                    <button type="submit" disabled={loading} style={styles.button}>
-                        {loading ? 'Connexion...' : 'Se connecter'}
-                    </button>
-                </form>
-
-                <p style={styles.link}>
-                    Pas encore de compte ? <Link to="/register">S'inscrire</Link>
-                </p>
+                </div>
             </div>
-        </div>
+        </main>
     );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    container: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' },
-    card: { background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px' },
-    title: { marginBottom: '1.5rem', textAlign: 'center', color: '#333' },
-    form: { display: 'flex', flexDirection: 'column', gap: '1rem' },
-    field: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
-    input: { padding: '0.6rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '1rem' },
-    button: { padding: '0.75rem', background: '#4a90e2', color: 'white', border: 'none', borderRadius: '4px', fontSize: '1rem', cursor: 'pointer' },
-    error: { color: 'red', background: '#fff0f0', padding: '0.5rem', borderRadius: '4px' },
-    link: { textAlign: 'center', marginTop: '1rem' },
-};

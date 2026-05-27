@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+// Callback enregistré par AuthContext pour déclencher un vrai logout React
+let _logoutHandler: (() => void) | null = null;
+
+export function registerLogoutHandler(fn: () => void) {
+    _logoutHandler = fn;
+}
+
 // Instance Axios configurée avec l'URL de base de l'API
-// Axios est une librairie de client HTTP qui facilite les requêtes vers une API REST
 const api = axios.create({
     baseURL: 'http://localhost:8080',
     headers: {
@@ -18,14 +24,22 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Intercepteur : si le serveur répond 401, on déconnecte l'utilisateur
+// Intercepteur : si le serveur répond 401 (token expiré/invalide) → déconnexion forcée
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
+            // 1. Nettoyer le stockage local
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/login';
+            // 2. Mettre à jour l'état React via le callback enregistré
+            if (_logoutHandler) {
+                _logoutHandler();
+            }
+            // 3. Rediriger vers la page de connexion
+            if (window.location.pathname !== '/connexion') {
+                window.location.href = '/connexion';
+            }
         }
         return Promise.reject(error);
     }
