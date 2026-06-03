@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/protectedRoute';
 import AdminRoute from './components/AdminRoute';
+import ModeratorRoute from './components/ModeratorRoute';
 import Header from './components/Header';
 import Footer from './components/Footer';
 
@@ -21,6 +22,7 @@ import DiagnosticHistoryPage from './pages/DiagnosticHistoryPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminPagesPage from './pages/admin/AdminPagesPage';
+import ModeratorQuestionnairePage from './pages/admin/ModeratorQuestionnairePage';
 
 // Redirige vers / si déjà connecté (pour login/register)
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
@@ -57,6 +59,9 @@ function AppRoutes() {
                     <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                     <Route path="/admin/utilisateurs" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
                     <Route path="/admin/pages" element={<AdminRoute><AdminPagesPage /></AdminRoute>} />
+
+                    {/* Routes modérateur */}
+                    <Route path="/moderateur/questionnaire" element={<ModeratorRoute><ModeratorQuestionnairePage /></ModeratorRoute>} />
 
                     {/* Redirections legacy */}
                     <Route path="/login" element={<Navigate to="/connexion" replace />} />

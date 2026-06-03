@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { authService } from "../api/authService";
 
 export default function Header() {
-    const { user, isAuthenticated, isAdmin, logout } = useAuth();
+    const { user, isAuthenticated, isAdmin, isModerator, logout } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = async () => {
@@ -25,6 +25,10 @@ export default function Header() {
         ? [
             ...(isAdmin
                 ? [{ iconId: "fr-icon-settings-5-line" as const, linkProps: { href: "/admin" }, text: "Administration" }]
+                : []
+            ),
+            ...(isModerator && !isAdmin
+                ? [{ iconId: "fr-icon-edit-line" as const, linkProps: { href: "/moderateur/questionnaire" }, text: "Modération" }]
                 : []
             ),
             { iconId: "fr-icon-account-circle-line" as const, linkProps: { href: "/profil" }, text: user ? `${user.prenom} ${user.nom}` : "Mon profil" },

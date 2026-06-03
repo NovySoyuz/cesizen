@@ -26,6 +26,13 @@ export default function AdminDashboard() {
                 <div className="fr-grid-row fr-grid-row--gutters">
                     <div className="fr-col-12 fr-col-md-4">
                         <Tile
+                            title="Questionnaire de stress"
+                            desc="Configurez les événements et les points associés du diagnostic."
+                            linkProps={{ href: '/moderateur/questionnaire' }}
+                        />
+                    </div>
+                    <div className="fr-col-12 fr-col-md-4">
+                        <Tile
                             title="Gestion des utilisateurs"
                             desc="Consultez, désactivez ou supprimez les comptes utilisateurs."
                             linkProps={{ href: '/admin/utilisateurs' }}
@@ -36,13 +43,6 @@ export default function AdminDashboard() {
                             title="Pages d'information"
                             desc="Créez, modifiez et gérez les pages de contenu informatif."
                             linkProps={{ href: '/admin/pages' }}
-                        />
-                    </div>
-                    <div className="fr-col-12 fr-col-md-4">
-                        <Tile
-                            title="Diagnostic de stress"
-                            desc="Consultez et testez le questionnaire de diagnostic."
-                            linkProps={{ href: '/diagnostic' }}
                         />
                     </div>
                 </div>
@@ -64,6 +64,7 @@ export default function AdminDashboard() {
         </main>
     );
 }
+
 
 
 

@@ -1,5 +1,6 @@
 package com.cesizen.cesizenapi.service;
 
+import com.cesizen.cesizenapi.dto.RoleUpdateDTO;
 import com.cesizen.cesizenapi.dto.UserDTO;
 import com.cesizen.cesizenapi.model.Utilisateur;
 import com.cesizen.cesizenapi.repository.UtilisateurRepository;
@@ -71,6 +72,23 @@ public class UserService {
         Utilisateur utilisateur = utilisateurRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
         utilisateurRepository.delete(utilisateur);
+    }
+
+    // ─── Change le rôle d'un utilisateur (admin uniquement) ──────
+    public UserDTO changeRole(Long id, RoleUpdateDTO dto) {
+        Utilisateur utilisateur = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+
+        Utilisateur.Role newRole;
+        try {
+            newRole = Utilisateur.Role.valueOf(dto.getRole().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Rôle invalide : " + dto.getRole());
+        }
+
+        utilisateur.setRole(newRole);
+        utilisateurRepository.save(utilisateur);
+        return toDto(utilisateur);
     }
 
     // ─── Réactive un compte désactivé (admin uniquement) ─────────

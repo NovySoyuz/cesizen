@@ -55,12 +55,35 @@ export default function AdminUsersPage() {
         }
     };
 
+    const handleRoleChange = async (user: UserDto, newRole: string) => {
+        if (!confirm(`Changer le rôle de ${user.prenom} ${user.nom} en "${newRole}" ?`)) return;
+        try {
+            await userService.changeRole(user.id, newRole);
+            setSuccessMsg(`Rôle de ${user.prenom} ${user.nom} mis à jour en ${newRole}.`);
+            fetchUsers();
+        } catch {
+            setError('Erreur lors du changement de rôle.');
+        }
+    };
+
     const tableData = users.map(user => [
         `${user.nom} ${user.prenom}`,
         user.email,
-        <Badge key={user.id + '-role'} severity={user.role === 'ADMIN' ? 'warning' : 'info'} small>
-            {user.role === 'ADMIN' ? 'Admin' : 'Utilisateur'}
-        </Badge>,
+        <div key={user.id + '-role'} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Badge severity={user.role === 'ADMIN' ? 'warning' : user.role === 'MODERATEUR' ? 'new' : 'info'} small>
+                {user.role === 'ADMIN' ? 'Admin' : user.role === 'MODERATEUR' ? 'Modérateur' : 'Utilisateur'}
+            </Badge>
+            <select
+                className="fr-select"
+                value={user.role}
+                style={{ width: 'auto', padding: '0.2rem 0.5rem', fontSize: '0.8rem' }}
+                onChange={e => handleRoleChange(user, e.target.value)}
+            >
+                <option value="USER">Utilisateur</option>
+                <option value="MODERATEUR">Modérateur</option>
+                <option value="ADMIN">Admin</option>
+            </select>
+        </div>,
         <Badge key={user.id + '-status'} severity={user.estActif ? 'success' : 'error'} small>
             {user.estActif ? 'Actif' : 'Inactif'}
         </Badge>,
@@ -136,6 +159,8 @@ export default function AdminUsersPage() {
         </main>
     );
 }
+
+
 
 
 

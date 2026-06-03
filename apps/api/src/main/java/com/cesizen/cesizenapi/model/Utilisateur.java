@@ -60,6 +60,6 @@ public class Utilisateur {
     }
 
     public enum Role {
-        USER, ADMIN
+        USER, MODERATEUR, ADMIN
     }
 }

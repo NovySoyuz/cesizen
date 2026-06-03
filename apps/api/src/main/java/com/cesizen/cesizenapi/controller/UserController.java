@@ -1,5 +1,6 @@
 package com.cesizen.cesizenapi.controller;
 
+import com.cesizen.cesizenapi.dto.RoleUpdateDTO;
 import com.cesizen.cesizenapi.dto.UserDTO;
 import com.cesizen.cesizenapi.service.UserService;
 import jakarta.validation.Valid;
@@ -42,6 +43,13 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ─── PUT /api/users/{id}/role (changement de rôle, admin) ────
+    @PutMapping("/{id}/role")
+    public ResponseEntity<UserDTO> changeRole(@PathVariable Long id,
+                                              @RequestBody RoleUpdateDTO dto) {
+        return ResponseEntity.ok(userService.changeRole(id, dto));
     }
 
     // ─── PUT /api/users/{id}/activate (réactivation) ─────────────

@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/users/*/activate").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/*/role").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/pages/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/pages/**").hasRole("ADMIN")
                         // Toute autre route nécessite d'être connecté

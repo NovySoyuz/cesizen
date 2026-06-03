@@ -20,5 +20,9 @@ export const userService = {
 
     hardDeleteUser: (id: number) =>
         api.delete(`/api/users/${id}`),
+
+    changeRole: (id: number, role: string) =>
+        api.put<UserDto>(`/api/users/${id}/role`, { role }).then(r => r.data),
 };
+
 

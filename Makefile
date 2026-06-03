@@ -11,7 +11,7 @@ help: ## Affiche cette aide
 # ─── Docker ──────────────────────────────────────────────────────
 
 up: ## Démarre DB + API
-	docker compose up -d cesizen-db cesizen-api
+	docker compose up -d cesizen-db cesizen-api cesizen-web
 
 up-full: ## Démarre DB + API + Front
 	docker compose --profile front up -d
@@ -84,9 +84,9 @@ rebuild-front: ## ⚡ Rebuild Front uniquement (npm + Docker)
 
 rebuild-all: ## ⚡ Rebuild complet API + Front
 	cd apps/api && mvnw.cmd clean package -DskipTests
-	docker compose build --no-cache cesizen-web
-	docker compose --profile front up -d --force-recreate cesizen-web
-	docker compose up -d --force-recreate cesizen-web
+	docker compose build --no-cache cesizen-web cesizen-api
+	docker compose --profile front up -d --force-recreate cesizen-web cesizen-api
+	docker compose up -d --force-recreate cesizen-web cesizen-api
 	@echo Front : http://localhost:3000
 	@echo Back  : http://localhost:8080
 # ─── Dev local (sans Docker) ─────────────────────────────────────

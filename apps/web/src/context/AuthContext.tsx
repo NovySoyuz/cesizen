@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { AuthResponse, UserDto } from '../types/auth';
 import { registerLogoutHandler } from '../api/axiosInstance';
+import api from '../api/axiosInstance';
 
 // ── Décode le JWT et vérifie s'il est expiré ─────────────────────
 function isTokenExpired(token: string): boolean {
@@ -21,6 +22,7 @@ interface AuthContextType {
     logout: () => void;
     isAuthenticated: boolean;
     isAdmin: boolean;
+    isModerator: boolean;
     isLoading: boolean;
 }
 
@@ -41,22 +43,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     }, []);
 
-    // ── Au démarrage : vérifier le token stocké et son expiration ───
+    // ── Au démarrage : vérifier le token puis recharger le profil réel ─
     useEffect(() => {
         const savedToken = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
 
         if (savedToken && savedUser) {
             if (isTokenExpired(savedToken)) {
-                // Token expiré → nettoyage immédiat sans redirection
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
+                setIsLoading(false);
             } else {
+                // Initialise d'abord avec le cache local (affichage immédiat)
                 setToken(savedToken);
                 setUser(JSON.parse(savedUser));
+                // Puis rafraîchit le profil depuis l'API pour avoir le rôle à jour
+                api.get<UserDto>('/api/users/me', {
+                    headers: { Authorization: `Bearer ${savedToken}` }
+                }).then(res => {
+                    const freshUser = res.data;
+                    localStorage.setItem('user', JSON.stringify(freshUser));
+                    setUser(freshUser);
+                }).catch(() => {
+                    // Si l'API échoue, on garde le cache local
+                }).finally(() => {
+                    setIsLoading(false);
+                });
             }
+        } else {
+            setIsLoading(false);
         }
-        setIsLoading(false); // ← terminé, on peut vérifier l'auth
     }, []);
 
     // ── Enregistrer logout dans l'intercepteur Axios ─────────────────
@@ -102,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             logout,
             isAuthenticated: !!token,
             isAdmin: user?.role === 'ADMIN',
+            isModerator: user?.role === 'MODERATEUR' || user?.role === 'ADMIN',
             isLoading,
         }}>
             {children}
