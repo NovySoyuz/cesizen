@@ -41,6 +41,8 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS) // pas de session HTTP
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // Preflight CORS (OPTIONS) toujours autorisé
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Routes publiques Auth
                         .requestMatchers("/api/auth/**").permitAll()
                         // Routes publiques Pages (GET uniquement)
@@ -84,11 +86,21 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // ─── CORS : autorise le front React à appeler l'API ──────────
+    // ─── CORS : autorise le front React + app mobile Capacitor ──────────
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
+        config.setAllowedOrigins(List.of(
+            // Web dev
+            "http://localhost:3000",
+            "http://localhost:5173",
+            // Android Capacitor (WebView charge depuis http://localhost)
+            "http://localhost",
+            // iOS Capacitor
+            "capacitor://localhost",
+            // Ionic
+            "ionic://localhost"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
