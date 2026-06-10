@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CesiZen</string>
+    <string name="title_activity_main">CesiZen</string>
+    <string name="package_name">com.cesizen.app</string>
+    <string name="custom_url_scheme">com.cesizen.app</string>
+</resources>

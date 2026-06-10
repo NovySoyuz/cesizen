@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 
 // Callback enregistré par AuthContext pour déclencher un vrai logout React
 let _logoutHandler: (() => void) | null = null;
@@ -7,9 +8,25 @@ export function registerLogoutHandler(fn: () => void) {
     _logoutHandler = fn;
 }
 
-// Instance Axios configurée avec l'URL de base de l'API
+/**
+ * Résolution dynamique de l'URL de base de l'API.
+ * - Android émulateur : 10.0.2.2 = loopback de la machine hôte
+ * - iOS simulateur    : localhost fonctionne directement via Capacitor
+ * - Navigateur web    : utilise VITE_API_URL ou localhost par défaut
+ */
+function getApiBaseUrl(): string {
+    if (Capacitor.isNativePlatform()) {
+        if (Capacitor.getPlatform() === 'android') {
+            return 'http://10.0.2.2:8080';
+        }
+        return 'http://localhost:8080';
+    }
+    return (import.meta.env.VITE_API_URL as string) ?? 'http://localhost:8080';
+}
+
+// Instance Axios configurée avec l'URL de base de l'API (adaptée selon la plateforme)
 const api = axios.create({
-    baseURL: 'http://localhost:8080',
+    baseURL: getApiBaseUrl(),
     headers: {
         'Content-Type': 'application/json',
     },
