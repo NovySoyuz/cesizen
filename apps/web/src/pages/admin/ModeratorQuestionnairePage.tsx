@@ -8,6 +8,35 @@ import type { QuestionnaireDto, QuestionDto } from '../../types/diagnostic';
 
 const QUESTIONNAIRE_ID = 1;
 
+// Les 5 niveaux de réponse du PSS-10
+const STRESS_OPTIONS = [
+    { key: 'jamais'        as const, libelle: 'Jamais',          abbrev: 'J'  },
+    { key: 'presqueJamais' as const, libelle: 'Presque jamais',  abbrev: 'PJ' },
+    { key: 'parfois'       as const, libelle: 'Parfois',         abbrev: 'P'  },
+    { key: 'assezSouvent'  as const, libelle: 'Assez souvent',   abbrev: 'AS' },
+    { key: 'tresSouvent'   as const, libelle: 'Très souvent',    abbrev: 'TS' },
+] as const;
+
+type OptionsMap = {
+    jamais: string; presqueJamais: string; parfois: string;
+    assezSouvent: string; tresSouvent: string;
+};
+
+// Par défaut : question directe (0→4)
+const DEFAULT_OPTIONS: OptionsMap = { jamais: '0', presqueJamais: '1', parfois: '2', assezSouvent: '3', tresSouvent: '4' };
+const EMPTY_OPTIONS:   OptionsMap = { jamais: '0', presqueJamais: '0', parfois: '0', assezSouvent: '0', tresSouvent: '0' };
+
+function libelleToKey(libelle: string): keyof OptionsMap | null {
+    switch (libelle) {
+        case 'Jamais':         return 'jamais';
+        case 'Presque jamais': return 'presqueJamais';
+        case 'Parfois':        return 'parfois';
+        case 'Assez souvent':  return 'assezSouvent';
+        case 'Très souvent':   return 'tresSouvent';
+        default:               return null;
+    }
+}
+
 export default function ModeratorQuestionnairePage() {
     const [questionnaire, setQuestionnaire] = useState<QuestionnaireDto | null>(null);
     const [loading, setLoading] = useState(true);
@@ -16,13 +45,13 @@ export default function ModeratorQuestionnairePage() {
 
     // Formulaire nouvelle question
     const [newLibelle, setNewLibelle] = useState('');
-    const [newPoints, setNewPoints] = useState('');
+    const [newOptions, setNewOptions] = useState<OptionsMap>(DEFAULT_OPTIONS);
     const [submitting, setSubmitting] = useState(false);
 
     // Edition inline
     const [editingQuestion, setEditingQuestion] = useState<number | null>(null);
     const [editLibelle, setEditLibelle] = useState('');
-    const [editPoints, setEditPoints] = useState('');
+    const [editOptions, setEditOptions] = useState<OptionsMap>(EMPTY_OPTIONS);
 
     const load = async () => {
         try {
@@ -40,25 +69,25 @@ export default function ModeratorQuestionnairePage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newLibelle.trim() || !newPoints.trim()) return;
+        if (!newLibelle.trim()) return;
         setSubmitting(true);
         setError(null);
         setSuccess(null);
         try {
             const payload: QuestionRequestDto = {
                 libelle: newLibelle.trim(),
-                options: [
-                    { libelle: 'Oui', points: parseInt(newPoints) },
-                    { libelle: 'Non', points: 0 },
-                ],
+                options: STRESS_OPTIONS.map(opt => ({
+                    libelle: opt.libelle,
+                    points: parseInt(newOptions[opt.key]) || 0,
+                })),
             };
             await moderatorService.createQuestion(QUESTIONNAIRE_ID, payload);
-            setSuccess('Événement ajouté avec succès.');
+            setSuccess('Question ajoutée avec succès.');
             setNewLibelle('');
-            setNewPoints('');
+            setNewOptions(DEFAULT_OPTIONS);
             await load();
         } catch {
-            setError("Erreur lors de l'ajout de l'événement.");
+            setError("Erreur lors de l'ajout de la question.");
         } finally {
             setSubmitting(false);
         }
@@ -67,20 +96,27 @@ export default function ModeratorQuestionnairePage() {
     const startEdit = (q: QuestionDto) => {
         setEditingQuestion(q.id);
         setEditLibelle(q.libelle);
-        const ouiOption = q.options.find(o => o.libelle === 'Oui');
-        setEditPoints(ouiOption ? String(ouiOption.points) : String(q.options[0]?.points ?? ''));
+        const opts: OptionsMap = { ...EMPTY_OPTIONS };
+        for (const opt of q.options) {
+            const key = libelleToKey(opt.libelle);
+            if (key) opts[key] = String(opt.points);
+        }
+        setEditOptions(opts);
     };
 
     const handleUpdate = async (q: QuestionDto) => {
         setError(null);
         setSuccess(null);
         try {
-            const ouiOption = q.options.find(o => o.libelle === 'Oui') ?? q.options[0];
             await moderatorService.updateQuestion(q.id, { libelle: editLibelle });
-            if (ouiOption) {
-                await moderatorService.updateOption(ouiOption.id, { points: parseInt(editPoints) });
+            // Mise à jour individuelle de chaque option par son ID
+            for (const opt of q.options) {
+                const key = libelleToKey(opt.libelle);
+                if (key !== null) {
+                    await moderatorService.updateOption(opt.id, { points: parseInt(editOptions[key]) || 0 });
+                }
             }
-            setSuccess('Événement mis à jour.');
+            setSuccess('Question mise à jour.');
             setEditingQuestion(null);
             await load();
         } catch {
@@ -89,12 +125,12 @@ export default function ModeratorQuestionnairePage() {
     };
 
     const handleDelete = async (questionId: number) => {
-        if (!confirm('Supprimer cet événement définitivement ?')) return;
+        if (!confirm('Supprimer cette question définitivement ?')) return;
         setError(null);
         setSuccess(null);
         try {
             await moderatorService.deleteQuestion(questionId);
-            setSuccess('Événement supprimé.');
+            setSuccess('Question supprimée.');
             await load();
         } catch {
             setError('Erreur lors de la suppression.');
@@ -112,9 +148,9 @@ export default function ModeratorQuestionnairePage() {
 
                 <div className="fr-grid-row fr-grid-row--middle fr-mb-4w">
                     <div className="fr-col">
-                        <h1 className="fr-h2">Questionnaire de stress</h1>
+                        <h1 className="fr-h2">Questionnaire de stress (PSS-10)</h1>
                         <p className="fr-text--lead">
-                            Configurez les événements et leurs points associés (échelle Holmes &amp; Rahe).
+                            Configurez les questions et les points associés à chaque niveau de réponse.
                         </p>
                     </div>
                 </div>
@@ -130,34 +166,34 @@ export default function ModeratorQuestionnairePage() {
                 <div className="fr-card fr-card--shadow fr-mb-4w">
                     <div className="fr-card__body">
                         <div className="fr-card__content">
-                            <h2 className="fr-h5">Ajouter un événement</h2>
+                            <h2 className="fr-h5">Ajouter une question</h2>
                             <form onSubmit={handleCreate}>
-                                <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--middle">
-                                    <div className="fr-col-12 fr-col-md-7">
-                                        <Input
-                                            label="Libellé de l'événement"
-                                            nativeInputProps={{
-                                                value: newLibelle,
-                                                onChange: e => setNewLibelle(e.target.value),
-                                                placeholder: 'Ex : Décès d\'un conjoint',
-                                                required: true,
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="fr-col-12 fr-col-md-3">
-                                        <Input
-                                            label="Points associés"
-                                            nativeInputProps={{
-                                                type: 'number',
-                                                value: newPoints,
-                                                onChange: e => setNewPoints(e.target.value),
-                                                min: 0,
-                                                max: 9999,
-                                                placeholder: 'Ex : 100',
-                                                required: true,
-                                            }}
-                                        />
-                                    </div>
+                                <Input
+                                    label="Libellé de la question"
+                                    nativeInputProps={{
+                                        value: newLibelle,
+                                        onChange: e => setNewLibelle(e.target.value),
+                                        placeholder: 'Ex : Au cours du dernier mois, à quelle fréquence...',
+                                        required: true,
+                                    }}
+                                />
+                                <p className="fr-label fr-mb-1w">Points par niveau de réponse</p>
+                                <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--middle fr-mb-2w">
+                                    {STRESS_OPTIONS.map(opt => (
+                                        <div key={opt.key} className="fr-col-6 fr-col-md-2">
+                                            <label className="fr-label" style={{ fontSize: '0.85rem' }}>
+                                                {opt.libelle}
+                                            </label>
+                                            <input
+                                                className="fr-input"
+                                                type="number"
+                                                value={newOptions[opt.key]}
+                                                onChange={e => setNewOptions(prev => ({ ...prev, [opt.key]: e.target.value }))}
+                                                min={0}
+                                                max={9999}
+                                            />
+                                        </div>
+                                    ))}
                                     <div className="fr-col-12 fr-col-md-2" style={{ paddingTop: '1.5rem' }}>
                                         <Button type="submit" disabled={submitting} iconId="fr-icon-add-line">
                                             Ajouter
@@ -169,30 +205,29 @@ export default function ModeratorQuestionnairePage() {
                     </div>
                 </div>
 
-                {/* ── Liste des événements ─────────────────────── */}
+                {/* ── Liste des questions ─────────────────────── */}
                 <h2 className="fr-h5 fr-mb-2w">
-                    Événements du questionnaire
-                    {questionnaire && <span className="fr-badge fr-badge--info fr-ml-2w">{questionnaire.questions.length} événement(s)</span>}
+                    Questions du questionnaire
+                    {questionnaire && <span className="fr-badge fr-badge--info fr-ml-2w">{questionnaire.questions.length} question(s)</span>}
                 </h2>
 
                 {loading ? (
                     <p>Chargement...</p>
                 ) : questionnaire && questionnaire.questions.length === 0 ? (
-                    <p className="fr-text--sm fr-hint-text">Aucun événement pour le moment.</p>
+                    <p className="fr-text--sm fr-hint-text">Aucune question pour le moment.</p>
                 ) : (
                     <div className="fr-table fr-table--bordered" style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%' }}>
                             <thead>
                                 <tr>
                                     <th scope="col" style={{ width: '50px' }}>#</th>
-                                    <th scope="col">Événement</th>
-                                    <th scope="col" style={{ width: '130px' }}>Points</th>
+                                    <th scope="col">Question</th>
+                                    <th scope="col" style={{ width: '340px' }}>Points par réponse</th>
                                     <th scope="col" style={{ width: '160px' }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {questionnaire?.questions.map((q) => {
-                                    const ouiOption = q.options.find(o => o.libelle === 'Oui') ?? q.options[0];
                                     const isEditing = editingQuestion === q.id;
                                     return (
                                         <tr key={q.id}>
@@ -209,16 +244,42 @@ export default function ModeratorQuestionnairePage() {
                                             </td>
                                             <td>
                                                 {isEditing ? (
-                                                    <input
-                                                        className="fr-input"
-                                                        type="number"
-                                                        value={editPoints}
-                                                        onChange={e => setEditPoints(e.target.value)}
-                                                        style={{ width: '90px' }}
-                                                        min={0}
-                                                    />
+                                                    /* 5 inputs en mode édition */
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                        {STRESS_OPTIONS.map(opt => (
+                                                            <div key={opt.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+                                                                <label style={{ fontSize: '0.72rem', color: 'var(--text-mention-grey)', whiteSpace: 'nowrap' }}>
+                                                                    {opt.libelle}
+                                                                </label>
+                                                                <input
+                                                                    className="fr-input"
+                                                                    type="number"
+                                                                    value={editOptions[opt.key]}
+                                                                    onChange={e => setEditOptions(prev => ({ ...prev, [opt.key]: e.target.value }))}
+                                                                    style={{ width: '58px', textAlign: 'center' }}
+                                                                    min={0}
+                                                                    max={9999}
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 ) : (
-                                                    <span className="fr-badge fr-badge--blue-cumulus">{ouiOption?.points ?? '–'} pts</span>
+                                                    /* 5 badges en lecture seule */
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                                                        {STRESS_OPTIONS.map(opt => {
+                                                            const found = q.options.find(o => o.libelle === opt.libelle);
+                                                            return (
+                                                                <span
+                                                                    key={opt.key}
+                                                                    className="fr-badge fr-badge--blue-cumulus"
+                                                                    title={opt.libelle}
+                                                                    style={{ fontSize: '0.75rem' }}
+                                                                >
+                                                                    {opt.abbrev} : {found?.points ?? '–'}
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 )}
                                             </td>
                                             <td>
