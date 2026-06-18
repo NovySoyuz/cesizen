@@ -17,6 +17,7 @@ public class ModeratorService {
     private final QuestionnaireRepository questionnaireRepository;
     private final QuestionRepository questionRepository;
     private final OptionReponseRepository optionReponseRepository;
+    private final ChoixUtilisateurRepository choixUtilisateurRepository;
 
     // ─── Récupère toutes les questions d'un questionnaire (avec options) ─
     @Transactional(readOnly = true)
@@ -109,9 +110,18 @@ public class ModeratorService {
     // ─── Supprime une question ────────────────────────────────────────
     @Transactional
     public void deleteQuestion(Long questionId) {
-        if (!questionRepository.existsById(questionId)) {
-            throw new RuntimeException("Question introuvable");
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new RuntimeException("Question introuvable"));
+
+        // 1. Supprimer les choix_utilisateur qui référencent les options de cette question
+        List<Long> optionIds = question.getOptions().stream()
+                .map(OptionReponse::getId)
+                .toList();
+        if (!optionIds.isEmpty()) {
+            choixUtilisateurRepository.deleteByOptionIds(optionIds);
         }
+
+        // 2. Supprimer la question (cascade supprime les option_reponse)
         questionRepository.deleteById(questionId);
     }
 
