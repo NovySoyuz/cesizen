@@ -90,17 +90,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-            // Web dev
-            "http://localhost:3000",
-            "http://localhost:5173",
-            // Android Capacitor (WebView charge depuis http://localhost)
-            "http://localhost",
-            // iOS Capacitor
-            "capacitor://localhost",
-            // Ionic
-            "ionic://localhost"
-        ));
+        // setAllowedOriginPatterns supporte les wildcards ET allowCredentials=true
+        // "*" autorise toute origine (localhost, IP réseau école, Capacitor, etc.)
+        config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

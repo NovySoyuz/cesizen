@@ -11,13 +11,17 @@ export function registerLogoutHandler(fn: () => void) {
 /**
  * Résolution dynamique de l'URL de base de l'API.
  * - Android émulateur : 10.0.2.2 = loopback de la machine hôte
- * - Android physique  : utilise VITE_API_URL (IP réelle de la machine hôte sur le réseau local)
+ * - Android physique  : utilise VITE_API_URL (voir options ci-dessous)
  * - iOS simulateur    : localhost fonctionne directement via Capacitor
  * - Navigateur web    : utilise VITE_API_URL ou localhost par défaut
  *
- * ⚠️  Pour un appareil physique connecté en WiFi, définir dans .env.local :
- *     VITE_API_URL=http://<IP_DE_VOTRE_MACHINE>:8080
- *     (ex: VITE_API_URL=http://192.168.1.42:8080)
+ * ──────────────────────────────────────────────────────────────────────
+ * OPTION 1 — Appareil physique connecté en USB (RECOMMANDÉ en école)
+ *    Contourne les pare-feu WiFi via le câble USB :
+ *      1. adb reverse tcp:8080 tcp:8080
+ *      2. Dans .env.local → VITE_API_URL=http://localhost:8080
+ *      3. npm run mobile:build
+ * ──────────────────────────────────────────────────────────────────────
  */
 function getApiBaseUrl(): string {
     // Si une URL est explicitement définie (utile pour appareil physique), on la prioritise toujours
@@ -33,7 +37,8 @@ function getApiBaseUrl(): string {
         }
         return 'http://localhost:8080';
     }
-    return 'http://localhost:8080';
+    // Fonctionne quelle que soit l'IP (localhost, réseau école, etc.)
+    return '';
 }
 
 // Instance Axios configurée avec l'URL de base de l'API (adaptée selon la plateforme)
