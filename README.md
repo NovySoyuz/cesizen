@@ -88,26 +88,25 @@ make rebuild-all   # Rebuild complet
 make test          # Lance les tests unitaires
 make db-shell      # Accès shell MySQL
 make db-reset      # ⚠️ Réinitialise la base de données
-make sonar-up      # Démarre SonarQube (Docker)
-make sonar         # Démarre SonarQube (si besoin) puis lance l'analyse
-make sonar-down    # Arrête SonarQube
+make sonar         # Lance les tests + l'analyse SonarCloud
 ```
 
 ---
 
-## 🔎 Analyse de qualité de code (SonarQube)
+## 🔎 Analyse de qualité de code (SonarCloud)
 
-L'analyse SonarQube est disponible via Docker et pilotée par le Makefile, aucune installation locale (Java scanner, etc.) n'est nécessaire — seul Docker est requis.
+L'analyse de code utilise [SonarCloud](https://sonarcloud.io) (SaaS gratuit pour les projets publics) — **aucun Docker n'est nécessaire** pour l'analyse, seul Maven (via le wrapper `mvnw`) est requis.
 
-### 1. Démarrer SonarQube
-```bash
-make sonar-up
-```
-Attendre ~30-60s puis ouvrir [http://localhost:9000](http://localhost:9000) (identifiants par défaut : `admin` / `admin`, mot de passe à changer au premier login).
+### 1. Créer le projet sur SonarCloud
+1. Se connecter sur [sonarcloud.io](https://sonarcloud.io) avec son compte GitHub.
+2. Créer/rejoindre une **organisation** SonarCloud (note sa clé, ex : `mon-org`).
+3. Importer le repo GitHub `cesizen` pour créer le projet (note sa **clé de projet**, ex : `mon-org_cesizen`).
 
 ### 2. Générer un token d'analyse
-Dans SonarQube : **Mon compte > Sécurité > Générer un token**, puis renseigner la valeur dans le fichier `.env` à la racine :
+Dans SonarCloud : **Mon compte > Sécurité > Générer un token**, puis renseigner les valeurs dans le fichier `.env` à la racine :
 ```env
+SONAR_ORGANIZATION=mon-org
+SONAR_PROJECT_KEY=mon-org_cesizen
 SONAR_TOKEN=squ_xxx...
 ```
 
@@ -115,17 +114,34 @@ SONAR_TOKEN=squ_xxx...
 ```bash
 make sonar
 ```
-Cette commande :
-1. Démarre SonarQube (+ sa base Postgres) si nécessaire (`sonar-up`)
-2. Compile et exécute les tests de l'API avec génération du rapport de couverture **Jacoco**
-3. Lance le scanner Sonar (image Docker `sonarsource/sonar-scanner-cli`) sur les deux modules **API** et **Web** (configuration dans `sonar-project.properties`)
+Cette commande compile l'API, exécute les tests (+ rapport de couverture **Jacoco**) puis envoie les résultats à SonarCloud via le plugin Maven `sonar-maven-plugin`.
 
-Les résultats sont ensuite consultables sur [http://localhost:9000](http://localhost:9000).
+Les résultats sont ensuite consultables sur [sonarcloud.io](https://sonarcloud.io) → votre projet.
 
-### Arrêter SonarQube
-```bash
-make sonar-down
-```
+---
+
+## 🤖 CI/CD (GitHub Actions)
+
+Le pipeline est défini dans [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) et comprend 3 jobs :
+
+| Job | Description |
+|---|---|
+| `backend-test` | Compile et lance les tests Maven (+ rapport Jacoco en artefact) |
+| `frontend-build` | `npm ci`, lint ESLint, build Vite |
+| `sonarqube` | `mvn clean verify sonar:sonar` vers **SonarCloud** (dépend de `backend-test`) |
+
+### Configuration requise (secrets GitHub)
+
+Dans **Settings > Secrets and variables > Actions** du repo, ajouter :
+
+| Secret | Valeur |
+|---|---|
+| `SONAR_TOKEN` | Token généré sur [sonarcloud.io](https://sonarcloud.io) (Mon compte > Sécurité) |
+| `SONAR_ORGANIZATION` | Clé de votre organisation SonarCloud |
+
+> ℹ️ SonarCloud étant un service public accessible depuis n'importe où, **aucune contrainte réseau** : le job `sonarqube` fonctionne directement sur les runners GitHub hébergés (`ubuntu-latest`), sans VPN, tunnel ni runner self-hosted.
+>
+> La clé de projet (`SONAR_PROJECT_KEY`) peut être surchargée via une **variable de repo** (Settings > Secrets and variables > Actions > Variables) ; par défaut elle vaut `cesizen`.
 
 ---
 

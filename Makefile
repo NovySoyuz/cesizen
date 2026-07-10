@@ -1,4 +1,4 @@
-.PHONY: help up up-full down restart build logs ps clean test db-shell dev-api dev-web rebuild-api rebuild-front rebuild-all sonar-up sonar-down sonar-logs sonar-scan sonar sonar-api sonar-web
+.PHONY: help up up-full down restart build logs ps clean test db-shell dev-api dev-web rebuild-api rebuild-front rebuild-all sonar
 
 # Couleurs
 GREEN  := \033[0;32m
@@ -100,29 +100,16 @@ dev-api: db-up ## Lance l'API en local (Java 21 requis)
 dev-web: ## Lance le front en local (hot-reload sur http://localhost:5173)
 	cd apps/web && npm run dev
 
-# ─── SonarQube (analyse de qualité de code) ──────────────────────
+# ─── SonarCloud (analyse de qualité de code, https://sonarcloud.io) ──
 
-sonar-up: ## Démarre SonarQube (+ sa base Postgres)
-	docker compose --profile sonar up -d sonarqube-db sonarqube
-	@echo "SonarQube starting... wait ~30-60s then open http://localhost:$${SONAR_PORT:-9000} (default login/pass: admin/admin)"
-
-sonar-down: ## Arrête SonarQube
-	docker compose --profile sonar down
-
-sonar-api: ## Lance les tests + génère le rapport de couverture Jacoco (API)
-	cd apps/api && ./mvnw.cmd clean test
-
-sonar-scan: sonar-api ## Lance l'analyse SonarQube (nécessite SONAR_TOKEN dans .env)
+sonar: ## ⚡ Lance les tests + l'analyse SonarCloud (nécessite SONAR_TOKEN/SONAR_ORGANIZATION dans .env)
 	@if [ -z "$$SONAR_TOKEN" ]; then \
-		echo "$(YELLOW)WARNING: SONAR_TOKEN missing in .env. Generate it at http://localhost:$${SONAR_PORT:-9000} (My Account > Security) then retry.$(RESET)"; \
+		echo "$(YELLOW)WARNING: SONAR_TOKEN missing in .env. Generate it at https://sonarcloud.io (My Account > Security) then retry.$(RESET)"; \
 		exit 1; \
 	fi
-	docker run --rm --network cesizen-network \
-		-e SONAR_HOST_URL="http://cesizen-sonarqube:9000" \
-		-e SONAR_TOKEN="$$SONAR_TOKEN" \
-		-v "$(CURDIR):/usr/src" \
-		sonarsource/sonar-scanner-cli
-
-sonar: sonar-up ## ⚡ Démarre SonarQube (si besoin) puis lance l'analyse complète (API + Web)
-	@$(MAKE) sonar-scan
+	cd apps/api && ./mvnw.cmd -B clean verify sonar:sonar \
+		-Dsonar.projectKey=$${SONAR_PROJECT_KEY:-cesizen} \
+		-Dsonar.organization=$$SONAR_ORGANIZATION \
+		-Dsonar.host.url=$${SONAR_HOST_URL:-https://sonarcloud.io} \
+		-Dsonar.token=$$SONAR_TOKEN
 
