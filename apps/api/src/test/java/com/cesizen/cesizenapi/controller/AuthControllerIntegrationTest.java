@@ -1,6 +1,7 @@
 package com.cesizen.cesizenapi.controller;
 
 import com.cesizen.cesizenapi.model.Utilisateur;
+import com.cesizen.cesizenapi.repository.DiagnosticRepository;
 import com.cesizen.cesizenapi.repository.UtilisateurRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,10 +29,14 @@ class AuthControllerIntegrationTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private UtilisateurRepository utilisateurRepository;
+    @Autowired private DiagnosticRepository diagnosticRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
+        // Supprime d'abord les diagnostics (FK vers utilisateur) pour éviter
+        // les violations de contrainte entre classes de test partageant la même DB H2.
+        diagnosticRepository.deleteAll();
         utilisateurRepository.deleteAll();
     }
 

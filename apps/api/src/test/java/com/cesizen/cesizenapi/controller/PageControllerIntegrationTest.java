@@ -2,6 +2,7 @@ package com.cesizen.cesizenapi.controller;
 
 import com.cesizen.cesizenapi.model.Page;
 import com.cesizen.cesizenapi.model.Utilisateur;
+import com.cesizen.cesizenapi.repository.DiagnosticRepository;
 import com.cesizen.cesizenapi.repository.PageRepository;
 import com.cesizen.cesizenapi.repository.UtilisateurRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +32,7 @@ class PageControllerIntegrationTest {
     @Autowired private ObjectMapper objectMapper;
     @Autowired private PageRepository pageRepository;
     @Autowired private UtilisateurRepository utilisateurRepository;
+    @Autowired private DiagnosticRepository diagnosticRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
     private Page page;
@@ -39,6 +41,10 @@ class PageControllerIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        // Les diagnostics référencent un utilisateur (FK) : à supprimer en premier
+        // pour éviter les violations de contrainte d'intégrité entre classes de test
+        // partageant la même base H2 en mémoire.
+        diagnosticRepository.deleteAll();
         pageRepository.deleteAll();
         utilisateurRepository.deleteAll();
 

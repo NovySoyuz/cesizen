@@ -88,6 +88,43 @@ make rebuild-all   # Rebuild complet
 make test          # Lance les tests unitaires
 make db-shell      # Accès shell MySQL
 make db-reset      # ⚠️ Réinitialise la base de données
+make sonar-up      # Démarre SonarQube (Docker)
+make sonar         # Démarre SonarQube (si besoin) puis lance l'analyse
+make sonar-down    # Arrête SonarQube
+```
+
+---
+
+## 🔎 Analyse de qualité de code (SonarQube)
+
+L'analyse SonarQube est disponible via Docker et pilotée par le Makefile, aucune installation locale (Java scanner, etc.) n'est nécessaire — seul Docker est requis.
+
+### 1. Démarrer SonarQube
+```bash
+make sonar-up
+```
+Attendre ~30-60s puis ouvrir [http://localhost:9000](http://localhost:9000) (identifiants par défaut : `admin` / `admin`, mot de passe à changer au premier login).
+
+### 2. Générer un token d'analyse
+Dans SonarQube : **Mon compte > Sécurité > Générer un token**, puis renseigner la valeur dans le fichier `.env` à la racine :
+```env
+SONAR_TOKEN=squ_xxx...
+```
+
+### 3. Lancer l'analyse
+```bash
+make sonar
+```
+Cette commande :
+1. Démarre SonarQube (+ sa base Postgres) si nécessaire (`sonar-up`)
+2. Compile et exécute les tests de l'API avec génération du rapport de couverture **Jacoco**
+3. Lance le scanner Sonar (image Docker `sonarsource/sonar-scanner-cli`) sur les deux modules **API** et **Web** (configuration dans `sonar-project.properties`)
+
+Les résultats sont ensuite consultables sur [http://localhost:9000](http://localhost:9000).
+
+### Arrêter SonarQube
+```bash
+make sonar-down
 ```
 
 ---
